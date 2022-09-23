@@ -5,7 +5,7 @@ on:
     - cron: '0 0 * * *'
   push:
     branches:
-      - master
+      - main
 
 env:
   BUILD_TYPE: Release
@@ -20,6 +20,9 @@ jobs:
       should_build: ${{ steps.should_build.outputs.should_build }}
       upload_url: ${{ steps.create_release.outputs.upload_url }}
     steps:
+  - name: ACTIONS_ALLOW_UNSECURE_COMMANDS
+    id: ACTIONS_ALLOW_UNSECURE_COMMANDS
+    run: echo 'ACTIONS_ALLOW_UNSECURE_COMMANDS=true' >> $GITHUB_ENV
     - name: Get latest version info
       id: version_info
       run: |
@@ -35,8 +38,6 @@ jobs:
     - name: Load version from cache
       id: version_check
       uses: actions/cache@v2
-      env:
-        ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
       with:
         path: ${{ steps.version_info.outputs.latest_tag }}.txt
         key: cached_version
@@ -65,14 +66,18 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
        matrix:
-         os: [windows-latest, ubuntu-latest, macOS-latest]
+         os: [windows-latest]
        fail-fast: false    
     steps:
+      - name: ACTIONS_ALLOW_UNSECURE_COMMANDS
+        id: ACTIONS_ALLOW_UNSECURE_COMMANDS
+        run: echo 'ACTIONS_ALLOW_UNSECURE_COMMANDS=true' >> $GITHUB_ENV
+    steps:
       - name: (Windows) Install dependencies
-      env:
-        ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
         if: matrix.os == 'windows-latest'
-        uses: seanmiddleditch/gha-setup-ninja@v3
+        uses: seanmiddleditch/gha-setup-ninja@v1
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
       - name: (Ubuntu) Install dependencies
         if: matrix.os == 'ubuntu-latest'
         run: sudo apt install -y cmake ninja-build libxcursor-dev libxi-dev libgl1-mesa-dev
@@ -83,13 +88,11 @@ jobs:
         id: skia-cache
         uses: actions/cache@v2
         env:
-        ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
         with:
           path: skia
           key: skia-${{ matrix.os }}-cache
       - name: Download Skia if not in cache
-      env:
-        ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
         if: steps.skia-cache.outputs.cache-hit != 'true'
         run: |
           curl -o Skia-${{ runner.os }}-Release-X64.zip -L https://github.com/aseprite/skia/releases/download/m81-b607b32047/Skia-${{ runner.os }}-Release-X64.zip
@@ -105,7 +108,9 @@ jobs:
         run: call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=x64
       - name: (Windows) Setting Visual Studio build environment variables and paths
         if: matrix.os == 'windows-latest'
-        uses: seanmiddleditch/gha-setup-vsdevenv@v4
+        uses: seanmiddleditch/gha-setup-vsdevenv@v1
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
       - name: (Windows) Run CMake
         if: matrix.os == 'windows-latest'
         working-directory: aseprite/build
