@@ -9,11 +9,11 @@ on:
             type: boolean
         run_linux:
             description: 'Build for Ubuntu'
-            required: false
+            required: true
             type: boolean
         run_mac:  
             description: 'Build for Mac'
-            required: false
+            required: true
             type: boolean
   schedule:
     - cron: '0 0 * * 5'
